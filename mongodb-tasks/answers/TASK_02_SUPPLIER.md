@@ -257,7 +257,131 @@ Step G: Build Supplier from all of the above
 5. **Emit Kafka event:** `EventType.SUPPLIER_CREATED`
 6. **Return the Supplier document**
 
-<!-- TODO: Implement create_supplier -->
+<details>
+<summary><b>Hint Level 1</b> - Direction</summary>
+
+The construction pattern is the same as TASK_01's `create_user`, but with MORE embedded objects. Build each embedded object as a separate variable, then assemble the Supplier from all of them. Access nested request fields with dot notation: `body.contact_info.primary_email`.
+
+</details>
+
+<details>
+<summary><b>Hint Level 2</b> - The document construction</summary>
+
+```python
+# Build contact info
+ci = body.contact_info
+contact_info = SupplierContactInfo(
+    primary_email=email,
+    additional_emails=ci.additional_emails,
+    primary_phone=ci.primary_phone,
+    contact_person_name=ci.contact_person_name,
+    contact_person_title=ci.contact_person_title,
+    contact_person_email=ci.contact_person_email,
+    contact_person_phone=ci.contact_person_phone,
+)
+
+# Build address
+addr = body.company_info.business_address
+business_address = CompanyAddress(
+    street_address_1=addr.street_address_1,
+    street_address_2=addr.street_address_2,
+    city=addr.city,
+    state=addr.state,
+    zip_code=addr.zip_code,
+    country=addr.country,
+)
+
+# Build company info
+company_info = CompanyInfo(
+    legal_name=body.company_info.legal_name,
+    dba_name=body.company_info.dba_name,
+    business_address=business_address,
+    shipping_address=...,  # same pattern if provided
+)
+```
+
+</details>
+
+<details>
+<summary><b>Hint Level 3</b> - Near-complete solution</summary>
+
+```python
+async def create_supplier(self, body):
+    email = body.contact_info.primary_email.lower().strip()
+    existing = await Supplier.find_one({"contact_info.primary_email": email})
+    if existing:
+        raise DuplicateError("Email already in use")
+
+    ci = body.contact_info
+    contact_info = SupplierContactInfo(
+        primary_email=email,
+        additional_emails=ci.additional_emails,
+        primary_phone=ci.primary_phone,
+        contact_person_name=ci.contact_person_name,
+        contact_person_title=ci.contact_person_title,
+        contact_person_email=ci.contact_person_email,
+        contact_person_phone=ci.contact_person_phone,
+    )
+
+    addr = body.company_info.business_address
+    business_address = CompanyAddress(
+        street_address_1=addr.street_address_1,
+        street_address_2=addr.street_address_2,
+        city=addr.city, state=addr.state,
+        zip_code=addr.zip_code, country=addr.country,
+    )
+
+    shipping_address = None
+    if body.company_info.shipping_address:
+        sa = body.company_info.shipping_address
+        shipping_address = CompanyAddress(
+            street_address_1=sa.street_address_1,
+            street_address_2=sa.street_address_2,
+            city=sa.city, state=sa.state,
+            zip_code=sa.zip_code, country=sa.country,
+        )
+
+    company_info = CompanyInfo(
+        legal_name=body.company_info.legal_name,
+        dba_name=body.company_info.dba_name,
+        business_address=business_address,
+        shipping_address=shipping_address,
+    )
+
+    bi = body.business_info
+    business_info = BusinessInfo(
+        facebook_url=bi.facebook_url, instagram_handle=bi.instagram_handle,
+        twitter_handle=bi.twitter_handle, linkedin_url=bi.linkedin_url,
+        timezone=bi.timezone, support_email=bi.support_email,
+        support_phone=bi.support_phone,
+    )
+
+    banking_info = None
+    if body.banking_info:
+        banking_info = BankingInfo(
+            bank_name=body.banking_info.bank_name,
+            account_holder_name=body.banking_info.account_holder_name,
+            account_number_last4=body.banking_info.account_number_last4,
+        )
+
+    supplier = Supplier(
+        password_hash=hash_password(body.password),
+        contact_info=contact_info,
+        company_info=company_info,
+        business_info=business_info,
+        banking_info=banking_info,
+    )
+    await supplier.insert()
+
+    self._kafka.emit(
+        event_type=EventType.SUPPLIER_CREATED,
+        entity_id=oid_to_str(supplier.id),
+        data=supplier.model_dump(mode="json"),
+    )
+    return supplier
+```
+
+</details>
 
 #### Verify Exercise 5.1
 
@@ -341,7 +465,20 @@ db.suppliers.findOne(
 
 > **Note:** Unlike User, Supplier does NOT have soft delete. No `deleted_at` check needed.
 
-<!-- TODO: Implement get_supplier -->
+<details>
+<summary><b>Hint Level 1</b> - Pattern</summary>
+
+```python
+try:
+    supplier = await Supplier.get(PydanticObjectId(supplier_id))
+except Exception:
+    raise NotFoundError("Supplier not found")
+if not supplier:
+    raise NotFoundError("Supplier not found")
+return supplier
+```
+
+</details>
 
 #### Verify Exercise 5.2
 
@@ -364,7 +501,19 @@ curl http://localhost:8000/suppliers/<supplier-id>
 2. Apply `skip` and `limit` (cap at 100)
 3. Return the list
 
-<!-- TODO: Implement list_suppliers -->
+<details>
+<summary><b>Hint Level 1</b> - Pattern</summary>
+
+```python
+return (
+    await Supplier.find_all()
+    .skip(skip)
+    .limit(min(limit, 100))
+    .to_list()
+)
+```
+
+</details>
 
 #### Verify Exercise 5.3
 
@@ -396,7 +545,41 @@ curl "http://localhost:8000/suppliers?limit=10&skip=0"
 
 **Key learning:** Notice how a single `save()` call updates fields across three different embedded objects. Beanie replaces the entire document in MongoDB - it doesn't send partial updates. This is the "fetch → modify → replace" pattern.
 
-<!-- TODO: Implement update_supplier -->
+<details>
+<summary><b>Hint Level 1</b> - Direction</summary>
+
+Same pattern as TASK_01's `update_user` - check each param for `is not None`, then assign. The difference is which nested object each field belongs to.
+
+</details>
+
+<details>
+<summary><b>Hint Level 2</b> - Pattern</summary>
+
+```python
+supplier = await self.get_supplier(supplier_id)
+
+if primary_phone is not None:
+    supplier.contact_info.primary_phone = primary_phone
+if legal_name is not None:
+    supplier.company_info.legal_name = legal_name
+if dba_name is not None:
+    supplier.company_info.dba_name = dba_name
+if support_email is not None:
+    supplier.business_info.support_email = support_email
+if support_phone is not None:
+    supplier.business_info.support_phone = support_phone
+
+await supplier.save()
+
+self._kafka.emit(
+    event_type=EventType.SUPPLIER_UPDATED,
+    entity_id=oid_to_str(supplier.id),
+    data=supplier.model_dump(mode="json"),
+)
+return supplier
+```
+
+</details>
 
 #### Verify Exercise 5.4
 
@@ -439,7 +622,21 @@ db.suppliers.findOne(
 - Users have relationships (orders, posts) that reference them. Soft delete preserves referential integrity.
 - Suppliers can also have products, but the system design chooses permanent removal. Products would become orphaned - this is a deliberate simplification.
 
-<!-- TODO: Implement delete_supplier -->
+<details>
+<summary><b>Hint Level 1</b> - Pattern</summary>
+
+```python
+supplier = await self.get_supplier(supplier_id)
+await supplier.delete()
+
+self._kafka.emit(
+    event_type=EventType.SUPPLIER_DELETED,
+    entity_id=oid_to_str(supplier.id),
+    data={"supplier_id": oid_to_str(supplier.id)},
+)
+```
+
+</details>
 
 #### Verify Exercise 5.5
 
@@ -513,7 +710,19 @@ db.suppliers.find({
 ```
 Does it still use the index?
 
-<!-- Think about this and discuss with your peers -->
+<details>
+<summary>Answer</summary>
+
+No! Compound indexes follow the **left prefix rule**. The index is `(country, state, city)`. You can query:
+- `country` alone - uses index
+- `country + state` - uses index
+- `country + state + city` - uses index
+- `city` alone - full collection scan (can't skip the prefix)
+- `state + city` - full collection scan (can't skip `country`)
+
+This is one of the most important MongoDB index concepts. The field ORDER in a compound index matters.
+
+</details>
 
 ### Challenge B: Soft Delete vs Hard Delete
 
@@ -523,13 +732,35 @@ The architecture uses soft delete for Users and hard delete for Suppliers. Think
 2. How would you change the design to handle this? (Options: cascade delete products, soft delete supplier instead, or check for products before allowing delete)
 3. What are the trade-offs of each approach?
 
-<!-- Think about this and discuss with your peers -->
+<details>
+<summary>Answer</summary>
+
+**Cascade delete:** Delete all supplier's products too. Clean but destructive - loses product data.
+
+**Soft delete:** Add `deleted_at` to Supplier like User has. Preserves data but requires filtering in all supplier queries.
+
+**Pre-check:** In `delete_supplier`, check `supplier.product_ids` - if non-empty, reject the delete. Safe but frustrating for users.
+
+The current design prioritizes simplicity. In production, you'd likely use soft delete for suppliers too, or cascade delete their products.
+
+</details>
 
 ### Challenge C: Supplier vs User - Why Two Collections?
 
 The architecture uses separate collections for suppliers and users. Both have email, password, and similar patterns. Why not put them in the same collection with a `type` field?
 
-<!-- Think about this and discuss with your peers -->
+<details>
+<summary>Answer</summary>
+
+**Performance:** A single collection with mixed types means every query needs a `type` filter. With separate collections, each index is specialized.
+
+**Schema flexibility:** Beanie enforces schemas per model. A single collection would need conditional validation. Separate models keep validation clean.
+
+**Operational independence:** Suppliers can be backed up, migrated, or sharded independently.
+
+**The trade-off:** If you wanted cross-collection email uniqueness, you'd need to check both collections (adding a query to `create_supplier`). The current design only checks within the supplier collection.
+
+</details>
 
 ---
 

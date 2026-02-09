@@ -267,7 +267,13 @@ Read `apps/mongo_backend/utils/order_utils.py` and answer these questions:
 2. **`build_order_customer(user_id)`** - What fields does it copy from the User? What errors can it raise?
 3. **`build_order_item(index, product, variant_name, quantity)`** - How does it determine the unit price? What does it use as the `item_id`?
 
-<!-- TODO: Implement understanding of utility functions -->
+<details>
+<summary>Answers</summary>
+
+1. Format: `ORD-YYYYMMDD-XXXX` where XXXX is `secrets.token_hex(2).upper()` (4 hex chars = 65,536 combinations per day)
+2. Copies: `user.id`, `user.profile.display_name`, `user.contact_info.primary_email`, `user.contact_info.phone`. Raises `ValidationError` for invalid ID, `NotFoundError` if user not found or `user.deleted_at` is set
+3. If `variant_name` is in `product.variants`, uses `product.variants[variant_name].price_cents`. Otherwise uses `product.base_price_cents`. The `item_id` is `f"item_{index + 1}"`
+</details>
 
 ---
 
@@ -371,7 +377,52 @@ self._kafka.emit(
 
 > **Hint Level 2**: Loop through `body.items` with `enumerate()`. For each item, fetch the product, validate it's ACTIVE, then call `build_order_item(i, product, item_req.variant_name, item_req.quantity)`.
 
-<!-- TODO: Implement create_order -->
+<details>
+<summary>Hint Level 3 - Full Implementation</summary>
+
+```python
+async def create_order(self, user_id: str, body) -> Order:
+    customer = await build_order_customer(user_id)
+
+    items = []
+    for i, item_req in enumerate(body.items):
+        try:
+            product = await Product.get(PydanticObjectId(item_req.product_id))
+        except Exception:
+            raise NotFoundError(f"Product not found: {item_req.product_id}")
+        if not product or product.status != ProductStatus.ACTIVE:
+            raise ValidationError(f"Product not available: {item_req.product_id}")
+
+        items.append(build_order_item(i, product, item_req.variant_name, item_req.quantity))
+
+    addr = body.shipping_address
+    shipping_address = ShippingAddress(
+        recipient_name=addr.recipient_name,
+        phone=addr.phone,
+        street_address_1=addr.street_address_1,
+        street_address_2=addr.street_address_2,
+        city=addr.city,
+        state=addr.state,
+        zip_code=addr.zip_code,
+        country=addr.country,
+    )
+
+    order = Order(
+        order_number=generate_order_number(),
+        customer=customer,
+        items=items,
+        shipping_address=shipping_address,
+    )
+    await order.insert()
+
+    self._kafka.emit(
+        event_type=EventType.ORDER_CREATED,
+        entity_id=oid_to_str(order.id),
+        data=order.model_dump(mode="json"),
+    )
+    return order
+```
+</details>
 
 #### Verify
 
@@ -435,7 +486,20 @@ async def get_order(self, order_id: str) -> Order:
 
 > **Hint Level 2**: Use `PydanticObjectId(order_id)` to convert the string, catch any exception, raise `NotFoundError("Order not found")`.
 
-<!-- TODO: Implement get_order -->
+<details>
+<summary>Hint Level 3 - Full Implementation</summary>
+
+```python
+async def get_order(self, order_id: str) -> Order:
+    try:
+        order = await Order.get(PydanticObjectId(order_id))
+    except Exception:
+        raise NotFoundError("Order not found")
+    if not order:
+        raise NotFoundError("Order not found")
+    return order
+```
+</details>
 
 #### Verify
 
@@ -508,7 +572,31 @@ return (
 
 > **Hint Level 2**: Remember to cap the limit with `min(limit, 100)` to prevent abuse. Use `PydanticObjectId(user_id)` for the nested field query.
 
-<!-- TODO: Implement list_orders -->
+<details>
+<summary>Hint Level 3 - Full Implementation</summary>
+
+```python
+async def list_orders(
+    self,
+    user_id: str,
+    skip: int = 0,
+    limit: int = 20,
+    status_filter: Optional[str] = None,
+) -> list[Order]:
+    query: dict = {"customer.user_id": PydanticObjectId(user_id)}
+    if status_filter:
+        statuses = [s.strip() for s in status_filter.split(",")]
+        query["status"] = {"$in": statuses}
+
+    return (
+        await Order.find(query)
+        .sort("-created_at")
+        .skip(skip)
+        .limit(min(limit, 100))
+        .to_list()
+    )
+```
+</details>
 
 #### Verify
 

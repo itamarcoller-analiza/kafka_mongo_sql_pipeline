@@ -243,7 +243,61 @@ Operation 1: FIND_ONE → Check if email already exists
 Operation 2: INSERT   → Persist the new User document
 ```
 
-<!-- TODO: Implement create_user -->
+<details>
+<summary><b>Hint Level 1</b> - Direction</summary>
+
+Beanie provides `ModelClass.find_one(filter_dict)` which maps directly to MongoDB's `findOne()`. For nested fields, use dot notation in the filter key. To insert, instantiate the model class and call `await document.insert()`.
+
+</details>
+
+<details>
+<summary><b>Hint Level 2</b> - Pattern</summary>
+
+```python
+# Uniqueness check (dot notation for nested field):
+existing = await User.find_one({"contact_info.primary_email": email})
+
+# Document construction:
+user = User(
+    password_hash=hash_password(password),
+    contact_info=ContactInfo(primary_email=email, phone=phone),
+    profile=UserProfile(display_name=display_name, bio=bio),
+)
+
+# Insert:
+await user.insert()
+
+# After insert, user.id is populated by MongoDB
+```
+
+</details>
+
+<details>
+<summary><b>Hint Level 3</b> - Near-complete solution</summary>
+
+```python
+async def create_user(self, email, password, display_name, phone=None, bio=None):
+    email = email.lower().strip()
+    existing = await User.find_one({"contact_info.primary_email": email})
+    if existing:
+        raise DuplicateError("Email already in use")
+
+    user = User(
+        password_hash=hash_password(password),
+        contact_info=ContactInfo(primary_email=email, phone=phone),
+        profile=UserProfile(display_name=display_name, bio=bio),
+    )
+    await user.insert()
+
+    self._kafka.emit(
+        event_type=EventType.USER_CREATED,
+        entity_id=oid_to_str(user.id),
+        data=user.model_dump(mode="json"),
+    )
+    return user
+```
+
+</details>
 
 #### Verify Exercise 5.1
 
@@ -329,7 +383,27 @@ User.get(PydanticObjectId("507f..."))           ← _id lookup (uses primary key
 
 `User.get()` is Beanie's wrapper around `find_one({"_id": ObjectId(...)})`. The `_id` field has a unique index by default in every MongoDB collection.
 
-<!-- TODO: Implement get_user -->
+<details>
+<summary><b>Hint Level 1</b> - Direction</summary>
+
+Wrap the `User.get()` call in a try/except to catch invalid ObjectId strings. An invalid string like `"not-a-valid-id"` will throw an exception when converting to `PydanticObjectId`.
+
+</details>
+
+<details>
+<summary><b>Hint Level 2</b> - Pattern</summary>
+
+```python
+try:
+    user = await User.get(PydanticObjectId(user_id))
+except Exception:
+    raise NotFoundError("User not found")
+if not user or user.deleted_at:
+    raise NotFoundError("User not found")
+return user
+```
+
+</details>
 
 #### Verify Exercise 5.2
 
@@ -374,7 +448,26 @@ curl http://localhost:8000/users/000000000000000000000000
 FIND where deleted_at == null, SKIP n, LIMIT m → list of User documents
 ```
 
-<!-- TODO: Implement list_users -->
+<details>
+<summary><b>Hint Level 1</b> - Direction</summary>
+
+Beanie's `find()` returns a query builder. Chain `.skip()`, `.limit()`, and `.to_list()` to execute the query.
+
+</details>
+
+<details>
+<summary><b>Hint Level 2</b> - Pattern</summary>
+
+```python
+return (
+    await User.find({"deleted_at": None})
+    .skip(skip)
+    .limit(min(limit, 100))
+    .to_list()
+)
+```
+
+</details>
 
 #### Verify Exercise 5.3
 
@@ -413,7 +506,36 @@ Operation 2: SAVE → replaces the document with updated fields
 
 > **Important:** Only update fields that are explicitly provided (not None). If the request only sends `display_name`, don't touch `phone`, `bio`, or `avatar`.
 
-<!-- TODO: Implement update_user -->
+<details>
+<summary><b>Hint Level 1</b> - Direction</summary>
+
+Check each parameter with `if display_name is not None:` before assigning. This preserves the "partial update" semantics of PATCH requests.
+
+</details>
+
+<details>
+<summary><b>Hint Level 2</b> - Pattern</summary>
+
+```python
+user = await self.get_user(user_id)
+
+if display_name is not None:
+    user.profile.display_name = display_name
+if phone is not None:
+    user.contact_info.phone = phone
+# ... same for bio, avatar
+
+await user.save()  # auto-updates updated_at
+
+self._kafka.emit(
+    event_type=EventType.USER_UPDATED,
+    entity_id=oid_to_str(user.id),
+    data=user.model_dump(mode="json"),
+)
+return user
+```
+
+</details>
 
 #### Verify Exercise 5.4
 
@@ -464,7 +586,29 @@ Operation 2: SAVE → sets deleted_at timestamp
 > - Comply with audit requirements
 > - Support "undo" functionality
 
-<!-- TODO: Implement delete_user -->
+<details>
+<summary><b>Hint Level 1</b> - Direction</summary>
+
+This is the same fetch-modify-save pattern as `update_user`, but you're setting `deleted_at` instead of profile fields.
+
+</details>
+
+<details>
+<summary><b>Hint Level 2</b> - Pattern</summary>
+
+```python
+user = await self.get_user(user_id)
+user.deleted_at = utc_now()
+await user.save()
+
+self._kafka.emit(
+    event_type=EventType.USER_DELETED,
+    entity_id=oid_to_str(user.id),
+    data={"user_id": oid_to_str(user.id)},
+)
+```
+
+</details>
 
 #### Verify Exercise 5.5
 
@@ -582,7 +726,22 @@ Look at `list_users`. It filters with `{"deleted_at": None}`. Now look at `get_u
 
 **Question:** Why not add `deleted_at: None` to the `get_user` query instead?
 
-<!-- Think about this and discuss with your peers -->
+<details>
+<summary>Answer</summary>
+
+You could combine them:
+```python
+user = await User.find_one({"_id": PydanticObjectId(user_id), "deleted_at": None})
+```
+
+However, the current approach (fetch then check) works well for `_id` lookups because:
+- The `_id` lookup is already the fastest query possible (unique index)
+- Adding `deleted_at` filter doesn't improve performance for single-document lookups
+- Separating the checks lets you potentially return different errors (e.g., "User was deleted" vs "User not found")
+
+For `list_users`, filtering at the database level is essential because scanning and filtering many documents in Python would be wasteful.
+
+</details>
 
 ---
 
