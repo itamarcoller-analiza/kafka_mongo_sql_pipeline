@@ -13,7 +13,7 @@ from shared.models.supplier import Supplier
 from shared.errors import NotFoundError, ValidationError
 from utils.datetime_utils import utc_now
 from kafka.producer import get_kafka_producer
-from shared.kafka.topics import Topic
+from shared.kafka.topics import EventType
 from utils.serialization import oid_to_str
 
 
@@ -100,9 +100,11 @@ class ProductService:
         )
         await product.insert()
 
+        supplier.product_ids.append(product.id)
+        await supplier.save()
+
         self._kafka.emit(
-            topic=Topic.PRODUCT,
-            action="created",
+            event_type=EventType.PRODUCT_CREATED,
             entity_id=oid_to_str(product.id),
             data=product.model_dump(mode="json"),
         )
@@ -167,6 +169,12 @@ class ProductService:
             product.variants = self._build_variants(body.variants)
 
         await product.save()
+
+        self._kafka.emit(
+            event_type=EventType.PRODUCT_UPDATED,
+            entity_id=oid_to_str(product.id),
+            data=product.model_dump(mode="json"),
+        )
         return product
 
     async def delete_product(self, product_id: str) -> None:
@@ -174,9 +182,16 @@ class ProductService:
         product.status = ProductStatus.DELETED
         await product.save()
 
+        try:
+            supplier = await Supplier.get(product.supplier_id)
+            if supplier and product.id in supplier.product_ids:
+                supplier.product_ids.remove(product.id)
+                await supplier.save()
+        except Exception:
+            pass
+
         self._kafka.emit(
-            topic=Topic.PRODUCT,
-            action="deleted",
+            event_type=EventType.PRODUCT_DELETED,
             entity_id=oid_to_str(product.id),
             data={"product_id": oid_to_str(product.id)},
         )
@@ -195,8 +210,7 @@ class ProductService:
         await product.save()
 
         self._kafka.emit(
-            topic=Topic.PRODUCT,
-            action="published",
+            event_type=EventType.PRODUCT_PUBLISHED,
             entity_id=oid_to_str(product.id),
             data=product.model_dump(mode="json"),
         )
@@ -209,6 +223,12 @@ class ProductService:
 
         product.status = ProductStatus.DISCONTINUED
         await product.save()
+
+        self._kafka.emit(
+            event_type=EventType.PRODUCT_DISCONTINUED,
+            entity_id=oid_to_str(product.id),
+            data=product.model_dump(mode="json"),
+        )
         return product
 
     async def mark_out_of_stock(self, product_id: str) -> Product:
@@ -218,6 +238,12 @@ class ProductService:
 
         product.status = ProductStatus.OUT_OF_STOCK
         await product.save()
+
+        self._kafka.emit(
+            event_type=EventType.PRODUCT_OUT_OF_STOCK,
+            entity_id=oid_to_str(product.id),
+            data=product.model_dump(mode="json"),
+        )
         return product
 
     async def restore_product(self, product_id: str) -> Product:
@@ -230,4 +256,10 @@ class ProductService:
 
         product.status = ProductStatus.DRAFT
         await product.save()
+
+        self._kafka.emit(
+            event_type=EventType.PRODUCT_RESTORED,
+            entity_id=oid_to_str(product.id),
+            data=product.model_dump(mode="json"),
+        )
         return product

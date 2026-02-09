@@ -90,10 +90,6 @@ class Post(Document):
     Posts are the full content documents.
     They are referenced by feed_items for unified feed display.
 
-    Permissions:
-    - Any community member can post
-    - Only the post author can edit their own post
-    - Only the community leader can remove any post
     """
 
     # Post type
@@ -106,7 +102,7 @@ class Post(Document):
     text_content: Annotated[str, Field(max_length=5000, description="Post text content")]
 
     # Media attachments (images, videos)
-    media: Annotated[Optional[List[MediaAttachment]], Field(default_factory=list, description="Media attachments")]
+    media: Annotated[List[MediaAttachment], Field(default_factory=list, description="Media attachments")]
 
     # Link preview (if sharing a link)
     link_preview: Annotated[Optional[LinkPreview], Field(None, description="Shared link preview")]
@@ -136,16 +132,10 @@ class Post(Document):
 
         indexes = [
             # Author's posts
-            [("author.user_id", 1), ("status", 1), ("created_at", -1)],
-
+            [("author.user_id", 1), ("deleted_at", 1), ("created_at", -1)],
 
             # Published posts
-            [("status", 1), ("published_at", -1)],
-
-
-            # Soft delete
-            [("deleted_at", 1)],
-
+            [("deleted_at", 1), ("published_at", -1)],
         ]
 
  

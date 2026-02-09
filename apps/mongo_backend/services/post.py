@@ -10,7 +10,7 @@ from shared.errors import NotFoundError, ValidationError
 from utils.datetime_utils import utc_now
 from utils.post_utils import build_post_author
 from kafka.producer import get_kafka_producer
-from shared.kafka.topics import Topic
+from shared.kafka.topics import EventType
 from utils.serialization import oid_to_str
 
 
@@ -72,8 +72,7 @@ class PostService:
         await post.insert()
 
         self._kafka.emit(
-            topic=Topic.POST,
-            action="created",
+            event_type=EventType.POST_CREATED,
             entity_id=oid_to_str(post.id),
             data=post.model_dump(mode="json"),
         )
@@ -118,6 +117,12 @@ class PostService:
             post.link_preview = self._build_link_preview(body.link_preview)
 
         await post.save()
+
+        self._kafka.emit(
+            event_type=EventType.POST_UPDATED,
+            entity_id=oid_to_str(post.id),
+            data=post.model_dump(mode="json"),
+        )
         return post
 
     async def delete_post(self, post_id: str) -> None:
@@ -126,8 +131,7 @@ class PostService:
         await post.save()
 
         self._kafka.emit(
-            topic=Topic.POST,
-            action="deleted",
+            event_type=EventType.POST_DELETED,
             entity_id=oid_to_str(post.id),
             data={"post_id": oid_to_str(post.id)},
         )
@@ -141,8 +145,7 @@ class PostService:
         await post.save()
 
         self._kafka.emit(
-            topic=Topic.POST,
-            action="published",
+            event_type=EventType.POST_PUBLISHED,
             entity_id=oid_to_str(post.id),
             data=post.model_dump(mode="json"),
         )

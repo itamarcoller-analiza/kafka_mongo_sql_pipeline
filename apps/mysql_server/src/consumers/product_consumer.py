@@ -20,7 +20,7 @@ class ProductConsumer:
         return datetime.fromisoformat(ts.replace("Z", "+00:00"))
 
     def _handle_product_upsert(self, event: dict):
-        """Shared handler for created and published (both send full model)."""
+        """Shared handler for all events that send full product model."""
         data = event.get("data", {})
         metadata = data.get("metadata", {})
         stats = data.get("stats", {})
@@ -75,9 +75,25 @@ class ProductConsumer:
         self._handle_product_upsert(event)
         logger.info(f"[PRODUCT_CREATED] {event['entity_id']}")
 
+    def handle_product_updated(self, event: dict):
+        self._handle_product_upsert(event)
+        logger.info(f"[PRODUCT_UPDATED] {event['entity_id']}")
+
     def handle_product_published(self, event: dict):
         self._handle_product_upsert(event)
         logger.info(f"[PRODUCT_PUBLISHED] {event['entity_id']}")
+
+    def handle_product_discontinued(self, event: dict):
+        self._handle_product_upsert(event)
+        logger.info(f"[PRODUCT_DISCONTINUED] {event['entity_id']}")
+
+    def handle_product_out_of_stock(self, event: dict):
+        self._handle_product_upsert(event)
+        logger.info(f"[PRODUCT_OUT_OF_STOCK] {event['entity_id']}")
+
+    def handle_product_restored(self, event: dict):
+        self._handle_product_upsert(event)
+        logger.info(f"[PRODUCT_RESTORED] {event['entity_id']}")
 
     def handle_product_deleted(self, event: dict):
         data = event.get("data", {})
@@ -89,6 +105,10 @@ class ProductConsumer:
     def get_handlers(self) -> dict:
         return {
             EventType.PRODUCT_CREATED: self.handle_product_created,
-            EventType.PRODUCT_DELETED: self.handle_product_deleted,
+            EventType.PRODUCT_UPDATED: self.handle_product_updated,
             EventType.PRODUCT_PUBLISHED: self.handle_product_published,
+            EventType.PRODUCT_DISCONTINUED: self.handle_product_discontinued,
+            EventType.PRODUCT_OUT_OF_STOCK: self.handle_product_out_of_stock,
+            EventType.PRODUCT_RESTORED: self.handle_product_restored,
+            EventType.PRODUCT_DELETED: self.handle_product_deleted,
         }

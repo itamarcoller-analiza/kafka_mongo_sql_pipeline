@@ -19,7 +19,8 @@ class UserConsumer:
             return None
         return datetime.fromisoformat(ts.replace("Z", "+00:00"))
 
-    def handle_user_created(self, event: dict):
+    def _handle_user_upsert(self, event: dict):
+        """Shared handler for created and updated (both send full model)."""
         data = event.get("data", {})
         contact = data.get("contact_info", {})
         profile = data.get("profile", {})
@@ -38,7 +39,14 @@ class UserConsumer:
             event_id=event.get("event_id"),
             event_timestamp=self._parse_ts(event.get("timestamp")),
         )
+
+    def handle_user_created(self, event: dict):
+        self._handle_user_upsert(event)
         logger.info(f"[USER_CREATED] {event['entity_id']}")
+
+    def handle_user_updated(self, event: dict):
+        self._handle_user_upsert(event)
+        logger.info(f"[USER_UPDATED] {event['entity_id']}")
 
     def handle_user_deleted(self, event: dict):
         data = event.get("data", {})
@@ -52,5 +60,6 @@ class UserConsumer:
     def get_handlers(self) -> dict:
         return {
             EventType.USER_CREATED: self.handle_user_created,
+            EventType.USER_UPDATED: self.handle_user_updated,
             EventType.USER_DELETED: self.handle_user_deleted,
         }

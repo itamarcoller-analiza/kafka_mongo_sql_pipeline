@@ -11,7 +11,7 @@ from shared.errors import NotFoundError, ValidationError
 from utils.datetime_utils import utc_now
 from utils.order_utils import generate_order_number, build_order_customer, build_order_item
 from kafka.producer import get_kafka_producer
-from shared.kafka.topics import Topic
+from shared.kafka.topics import EventType
 from utils.serialization import oid_to_str
 
 
@@ -58,8 +58,7 @@ class OrderService:
         await order.insert()
 
         self._kafka.emit(
-            topic=Topic.ORDER,
-            action="created",
+            event_type=EventType.ORDER_CREATED,
             entity_id=oid_to_str(order.id),
             data=order.model_dump(mode="json"),
         )
@@ -103,12 +102,8 @@ class OrderService:
         await order.save()
 
         self._kafka.emit(
-            topic=Topic.ORDER,
-            action="cancelled",
+            event_type=EventType.ORDER_CANCELLED,
             entity_id=oid_to_str(order.id),
-            data={
-                "order_number": order.order_number,
-                "reason": reason,
-            },
+            data={"order_number": order.order_number},
         )
         return order

@@ -13,7 +13,7 @@ from shared.errors import DuplicateError, NotFoundError
 from utils.password import hash_password
 from utils.datetime_utils import utc_now
 from kafka.producer import get_kafka_producer
-from shared.kafka.topics import Topic
+from shared.kafka.topics import EventType
 from utils.serialization import oid_to_str
 
 
@@ -48,8 +48,7 @@ class UserService:
         await user.insert()
 
         self._kafka.emit(
-            topic=Topic.USER,
-            action="created",
+            event_type=EventType.USER_CREATED,
             entity_id=oid_to_str(user.id),
             data=user.model_dump(mode="json"),
         )
@@ -92,6 +91,12 @@ class UserService:
             user.profile.avatar = avatar
 
         await user.save()
+
+        self._kafka.emit(
+            event_type=EventType.USER_UPDATED,
+            entity_id=oid_to_str(user.id),
+            data=user.model_dump(mode="json"),
+        )
         return user
 
     async def delete_user(self, user_id: str) -> None:
@@ -100,8 +105,7 @@ class UserService:
         await user.save()
 
         self._kafka.emit(
-            topic=Topic.USER,
-            action="deleted",
+            event_type=EventType.USER_DELETED,
             entity_id=oid_to_str(user.id),
             data={"user_id": oid_to_str(user.id)},
         )
@@ -186,8 +190,7 @@ class UserService:
         await supplier.insert()
 
         self._kafka.emit(
-            topic=Topic.SUPPLIER,
-            action="created",
+            event_type=EventType.SUPPLIER_CREATED,
             entity_id=oid_to_str(supplier.id),
             data=supplier.model_dump(mode="json"),
         )
@@ -233,6 +236,12 @@ class UserService:
             supplier.business_info.support_phone = support_phone
 
         await supplier.save()
+
+        self._kafka.emit(
+            event_type=EventType.SUPPLIER_UPDATED,
+            entity_id=oid_to_str(supplier.id),
+            data=supplier.model_dump(mode="json"),
+        )
         return supplier
 
     async def delete_supplier(self, supplier_id: str) -> None:
@@ -240,8 +249,7 @@ class UserService:
         await supplier.delete()
 
         self._kafka.emit(
-            topic=Topic.SUPPLIER,
-            action="deleted",
+            event_type=EventType.SUPPLIER_DELETED,
             entity_id=oid_to_str(supplier.id),
             data={"supplier_id": oid_to_str(supplier.id)},
         )

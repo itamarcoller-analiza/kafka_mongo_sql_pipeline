@@ -183,6 +183,96 @@ contact_infos = [
         "contact_person_email": "shaked.mor@plainview-supply.co.il",
         "contact_person_phone": "+972-52-910-2260",
     },
+    {
+        "primary_email": "contact@kineret-goods.co.il",
+        "additional_emails": ["billing@kineret-goods.co.il", "support@kineret-goods.co.il"],
+        "primary_phone": "+972-50-410-1207",
+        "contact_person_name": "Gal Yadin",
+        "contact_person_title": "Procurement Lead",
+        "contact_person_email": "gal.yadin@kineret-goods.co.il",
+        "contact_person_phone": "+972-52-910-2261",
+    },
+    {
+        "primary_email": "ops@herzliya-logistics.com",
+        "additional_emails": ["finance@herzliya-logistics.com", "cs@herzliya-logistics.com"],
+        "primary_phone": "+972-50-410-1208",
+        "contact_person_name": "Dor Elbaz",
+        "contact_person_title": "Warehouse Director",
+        "contact_person_email": "dor.elbaz@herzliya-logistics.com",
+        "contact_person_phone": "+972-52-910-2262",
+    },
+    {
+        "primary_email": "office@yavne-wholesale.co.il",
+        "additional_emails": ["ap@yavne-wholesale.co.il", "help@yavne-wholesale.co.il"],
+        "primary_phone": "+972-50-410-1209",
+        "contact_person_name": "Sapir Levy",
+        "contact_person_title": "Account Executive",
+        "contact_person_email": "sapir.levy@yavne-wholesale.co.il",
+        "contact_person_phone": "+972-52-910-2263",
+    },
+    {
+        "primary_email": "contact@modiin-trade.com",
+        "additional_emails": ["billing@modiin-trade.com", "support@modiin-trade.com"],
+        "primary_phone": "+972-50-410-1210",
+        "contact_person_name": "Ran Segal",
+        "contact_person_title": "Operations Lead",
+        "contact_person_email": "ran.segal@modiin-trade.com",
+        "contact_person_phone": "+972-52-910-2264",
+    },
+    {
+        "primary_email": "ops@rishon-sourcing.co.il",
+        "additional_emails": ["finance@rishon-sourcing.co.il", "cs@rishon-sourcing.co.il"],
+        "primary_phone": "+972-50-410-1211",
+        "contact_person_name": "Neta Harari",
+        "contact_person_title": "Supply Chain Manager",
+        "contact_person_email": "neta.harari@rishon-sourcing.co.il",
+        "contact_person_phone": "+972-52-910-2265",
+    },
+    {
+        "primary_email": "office@ashkelon-import.com",
+        "additional_emails": ["billing@ashkelon-import.com", "support@ashkelon-import.com"],
+        "primary_phone": "+972-50-410-1212",
+        "contact_person_name": "Ori Tamam",
+        "contact_person_title": "General Manager",
+        "contact_person_email": "ori.tamam@ashkelon-import.com",
+        "contact_person_phone": "+972-52-910-2266",
+    },
+    {
+        "primary_email": "contact@acre-distribution.co.il",
+        "additional_emails": ["ap@acre-distribution.co.il", "help@acre-distribution.co.il"],
+        "primary_phone": "+972-50-410-1213",
+        "contact_person_name": "Lina Masri",
+        "contact_person_title": "Regional Coordinator",
+        "contact_person_email": "lina.masri@acre-distribution.co.il",
+        "contact_person_phone": "+972-52-910-2267",
+    },
+    {
+        "primary_email": "ops@raanana-supply.com",
+        "additional_emails": ["finance@raanana-supply.com", "support@raanana-supply.com"],
+        "primary_phone": "+972-50-410-1214",
+        "contact_person_name": "Tomer Barak",
+        "contact_person_title": "Logistics Lead",
+        "contact_person_email": "tomer.barak@raanana-supply.com",
+        "contact_person_phone": "+972-52-910-2268",
+    },
+    {
+        "primary_email": "office@zefat-traders.co.il",
+        "additional_emails": ["billing@zefat-traders.co.il", "cs@zefat-traders.co.il"],
+        "primary_phone": "+972-50-410-1215",
+        "contact_person_name": "Yael Alon",
+        "contact_person_title": "Business Development",
+        "contact_person_email": "yael.alon@zefat-traders.co.il",
+        "contact_person_phone": "+972-52-910-2269",
+    },
+    {
+        "primary_email": "contact@carmiel-hub.co.il",
+        "additional_emails": ["billing@carmiel-hub.co.il", "support@carmiel-hub.co.il"],
+        "primary_phone": "+972-50-410-1216",
+        "contact_person_name": "Noam Koren",
+        "contact_person_title": "Fulfillment Manager",
+        "contact_person_email": "noam.koren@carmiel-hub.co.il",
+        "contact_person_phone": "+972-52-910-2270",
+    },
 ]
 
 company_infos = [
@@ -589,6 +679,206 @@ company_infos.extend([
             "country": "IL",
         },
     },
+    {
+        "legal_name": "Kineret Goods & Trade Ltd.",
+        "dba_name": "Kineret Goods",
+        "business_address": {
+            "street_address_1": "8 Lakeside Blvd",
+            "street_address_2": "Suite 3",
+            "city": "Tiberias",
+            "state": "Northern District",
+            "zip_code": "1410201",
+            "country": "IL",
+        },
+        "shipping_address": {
+            "street_address_1": "20 Jordan Industrial Zone",
+            "street_address_2": "Warehouse B",
+            "city": "Zemach",
+            "state": "Northern District",
+            "zip_code": "1513001",
+            "country": "IL",
+        },
+    },
+    {
+        "legal_name": "Herzliya Logistics Partners Ltd.",
+        "dba_name": "Herzliya Logistics",
+        "business_address": {
+            "street_address_1": "33 HaBanim St.",
+            "street_address_2": "Floor 8",
+            "city": "Herzliya",
+            "state": "Tel Aviv District",
+            "zip_code": "4672501",
+            "country": "IL",
+        },
+        "shipping_address": {
+            "street_address_1": "6 Pituach Industrial",
+            "street_address_2": "Dock 2",
+            "city": "Herzliya Pituach",
+            "state": "Tel Aviv District",
+            "zip_code": "4673301",
+            "country": "IL",
+        },
+    },
+    {
+        "legal_name": "Yavne Wholesale Corp Ltd.",
+        "dba_name": "Yavne Wholesale",
+        "business_address": {
+            "street_address_1": "15 HaRakevet St.",
+            "street_address_2": None,
+            "city": "Yavne",
+            "state": "Central District",
+            "zip_code": "8110201",
+            "country": "IL",
+        },
+        "shipping_address": {
+            "street_address_1": "9 Southern Industrial Zone",
+            "street_address_2": "Unit 11",
+            "city": "Yavne",
+            "state": "Central District",
+            "zip_code": "8112101",
+            "country": "IL",
+        },
+    },
+    {
+        "legal_name": "Modiin Trade & Commerce Ltd.",
+        "dba_name": "Modiin Trade",
+        "business_address": {
+            "street_address_1": "21 Emek HaEla St.",
+            "street_address_2": "Office 9",
+            "city": "Modi'in",
+            "state": "Central District",
+            "zip_code": "7171701",
+            "country": "IL",
+        },
+        "shipping_address": {
+            "street_address_1": "4 Maccabim Logistics Park",
+            "street_address_2": "Hangar E",
+            "city": "Modi'in-Maccabim-Re'ut",
+            "state": "Central District",
+            "zip_code": "7179901",
+            "country": "IL",
+        },
+    },
+    {
+        "legal_name": "Rishon Sourcing International Ltd.",
+        "dba_name": "Rishon Sourcing",
+        "business_address": {
+            "street_address_1": "40 Rothschild St.",
+            "street_address_2": "Floor 3",
+            "city": "Rishon LeZion",
+            "state": "Central District",
+            "zip_code": "7526201",
+            "country": "IL",
+        },
+        "shipping_address": {
+            "street_address_1": "18 Western Industrial Zone",
+            "street_address_2": "Storage 4",
+            "city": "Rishon LeZion",
+            "state": "Central District",
+            "zip_code": "7570101",
+            "country": "IL",
+        },
+    },
+    {
+        "legal_name": "Ashkelon Import Solutions Ltd.",
+        "dba_name": "Ashkelon Import",
+        "business_address": {
+            "street_address_1": "7 HaAtzmaut Blvd",
+            "street_address_2": "Suite 12",
+            "city": "Ashkelon",
+            "state": "Southern District",
+            "zip_code": "7824101",
+            "country": "IL",
+        },
+        "shipping_address": {
+            "street_address_1": "23 Coastal Industrial",
+            "street_address_2": "Dock 8",
+            "city": "Ashkelon",
+            "state": "Southern District",
+            "zip_code": "7830401",
+            "country": "IL",
+        },
+    },
+    {
+        "legal_name": "Acre Distribution Networks Ltd.",
+        "dba_name": "Acre Distribution",
+        "business_address": {
+            "street_address_1": "13 Old City Rd",
+            "street_address_2": None,
+            "city": "Acre",
+            "state": "Northern District",
+            "zip_code": "2451301",
+            "country": "IL",
+        },
+        "shipping_address": {
+            "street_address_1": "10 Northern Port Zone",
+            "street_address_2": "Warehouse 7",
+            "city": "Acre",
+            "state": "Northern District",
+            "zip_code": "2460101",
+            "country": "IL",
+        },
+    },
+    {
+        "legal_name": "Ra'anana Supply Solutions Ltd.",
+        "dba_name": "Ra'anana Supply",
+        "business_address": {
+            "street_address_1": "28 Ahuza St.",
+            "street_address_2": "Floor 2",
+            "city": "Ra'anana",
+            "state": "Central District",
+            "zip_code": "4353201",
+            "country": "IL",
+        },
+        "shipping_address": {
+            "street_address_1": "5 Hi-Tech Park",
+            "street_address_2": "Storage B",
+            "city": "Ra'anana",
+            "state": "Central District",
+            "zip_code": "4366101",
+            "country": "IL",
+        },
+    },
+    {
+        "legal_name": "Zefat Trading House Ltd.",
+        "dba_name": "Zefat Traders",
+        "business_address": {
+            "street_address_1": "6 Jerusalem St.",
+            "street_address_2": "Office 4",
+            "city": "Zefat",
+            "state": "Northern District",
+            "zip_code": "1320001",
+            "country": "IL",
+        },
+        "shipping_address": {
+            "street_address_1": "17 Galilee Logistics Hub",
+            "street_address_2": "Unit 9",
+            "city": "Rosh Pina",
+            "state": "Northern District",
+            "zip_code": "1200501",
+            "country": "IL",
+        },
+    },
+    {
+        "legal_name": "Carmiel Supply Hub Ltd.",
+        "dba_name": "Carmiel Hub",
+        "business_address": {
+            "street_address_1": "9 HaHaroshet St.",
+            "street_address_2": "Floor 1",
+            "city": "Karmiel",
+            "state": "Northern District",
+            "zip_code": "2160101",
+            "country": "IL",
+        },
+        "shipping_address": {
+            "street_address_1": "2 Segev Industrial Park",
+            "street_address_2": "Warehouse D",
+            "city": "Karmiel",
+            "state": "Northern District",
+            "zip_code": "2161501",
+            "country": "IL",
+        },
+    },
 ])
 
 business_infos = [
@@ -773,6 +1063,96 @@ business_infos = [
         "support_email": "help@plainview-supply.co.il",
         "support_phone": "+972-4-600-1120",
     },
+    {
+        "facebook_url": "https://facebook.com/kineret.goods",
+        "instagram_handle": "kineret_goods",
+        "twitter_handle": "kineret_goods",
+        "linkedin_url": "https://linkedin.com/company/kineret-goods",
+        "timezone": "Asia/Jerusalem",
+        "support_email": "support@kineret-goods.co.il",
+        "support_phone": "+972-4-600-1121",
+    },
+    {
+        "facebook_url": "https://facebook.com/herzliya.logistics",
+        "instagram_handle": "herzliya_logistics",
+        "twitter_handle": "herzliya_log",
+        "linkedin_url": "https://linkedin.com/company/herzliya-logistics",
+        "timezone": "Asia/Jerusalem",
+        "support_email": "help@herzliya-logistics.com",
+        "support_phone": "+972-9-600-1122",
+    },
+    {
+        "facebook_url": "https://facebook.com/yavne.wholesale",
+        "instagram_handle": "yavne_wholesale",
+        "twitter_handle": "yavne_wholesale",
+        "linkedin_url": "https://linkedin.com/company/yavne-wholesale",
+        "timezone": "Asia/Jerusalem",
+        "support_email": "support@yavne-wholesale.co.il",
+        "support_phone": "+972-8-600-1123",
+    },
+    {
+        "facebook_url": "https://facebook.com/modiin.trade",
+        "instagram_handle": "modiin_trade",
+        "twitter_handle": "modiin_trade",
+        "linkedin_url": "https://linkedin.com/company/modiin-trade",
+        "timezone": "Asia/Jerusalem",
+        "support_email": "help@modiin-trade.com",
+        "support_phone": "+972-8-600-1124",
+    },
+    {
+        "facebook_url": "https://facebook.com/rishon.sourcing",
+        "instagram_handle": "rishon_sourcing",
+        "twitter_handle": "rishon_source",
+        "linkedin_url": "https://linkedin.com/company/rishon-sourcing",
+        "timezone": "Asia/Jerusalem",
+        "support_email": "support@rishon-sourcing.co.il",
+        "support_phone": "+972-3-600-1125",
+    },
+    {
+        "facebook_url": "https://facebook.com/ashkelon.import",
+        "instagram_handle": "ashkelon_import",
+        "twitter_handle": "ashkelon_imp",
+        "linkedin_url": "https://linkedin.com/company/ashkelon-import",
+        "timezone": "Asia/Jerusalem",
+        "support_email": "help@ashkelon-import.com",
+        "support_phone": "+972-8-600-1126",
+    },
+    {
+        "facebook_url": "https://facebook.com/acre.distribution",
+        "instagram_handle": "acre_distribution",
+        "twitter_handle": "acre_dist",
+        "linkedin_url": "https://linkedin.com/company/acre-distribution",
+        "timezone": "Asia/Jerusalem",
+        "support_email": "support@acre-distribution.co.il",
+        "support_phone": "+972-4-600-1127",
+    },
+    {
+        "facebook_url": "https://facebook.com/raanana.supply",
+        "instagram_handle": "raanana_supply",
+        "twitter_handle": "raanana_supply",
+        "linkedin_url": "https://linkedin.com/company/raanana-supply",
+        "timezone": "Asia/Jerusalem",
+        "support_email": "help@raanana-supply.com",
+        "support_phone": "+972-9-600-1128",
+    },
+    {
+        "facebook_url": "https://facebook.com/zefat.traders",
+        "instagram_handle": "zefat_traders",
+        "twitter_handle": "zefat_traders",
+        "linkedin_url": "https://linkedin.com/company/zefat-traders",
+        "timezone": "Asia/Jerusalem",
+        "support_email": "support@zefat-traders.co.il",
+        "support_phone": "+972-4-600-1129",
+    },
+    {
+        "facebook_url": "https://facebook.com/carmiel.hub",
+        "instagram_handle": "carmiel_hub",
+        "twitter_handle": "carmiel_hub",
+        "linkedin_url": "https://linkedin.com/company/carmiel-hub",
+        "timezone": "Asia/Jerusalem",
+        "support_email": "help@carmiel-hub.co.il",
+        "support_phone": "+972-4-600-1130",
+    },
 ]
 
 banking_infos = [
@@ -877,6 +1257,56 @@ banking_infos = [
         "account_holder_name": "Plainview Supply Group Ltd.",
         "account_number_last4": "4120",
     },
+    {
+        "bank_name": "Bank Hapoalim",
+        "account_holder_name": "Kineret Goods & Trade Ltd.",
+        "account_number_last4": "4121",
+    },
+    {
+        "bank_name": "Leumi Bank",
+        "account_holder_name": "Herzliya Logistics Partners Ltd.",
+        "account_number_last4": "4122",
+    },
+    {
+        "bank_name": "Discount Bank",
+        "account_holder_name": "Yavne Wholesale Corp Ltd.",
+        "account_number_last4": "4123",
+    },
+    {
+        "bank_name": "Mizrahi-Tefahot",
+        "account_holder_name": "Modiin Trade & Commerce Ltd.",
+        "account_number_last4": "4124",
+    },
+    {
+        "bank_name": "Bank Hapoalim",
+        "account_holder_name": "Rishon Sourcing International Ltd.",
+        "account_number_last4": "4125",
+    },
+    {
+        "bank_name": "Leumi Bank",
+        "account_holder_name": "Ashkelon Import Solutions Ltd.",
+        "account_number_last4": "4126",
+    },
+    {
+        "bank_name": "Discount Bank",
+        "account_holder_name": "Acre Distribution Networks Ltd.",
+        "account_number_last4": "4127",
+    },
+    {
+        "bank_name": "Mizrahi-Tefahot",
+        "account_holder_name": "Ra'anana Supply Solutions Ltd.",
+        "account_number_last4": "4128",
+    },
+    {
+        "bank_name": "Bank Hapoalim",
+        "account_holder_name": "Zefat Trading House Ltd.",
+        "account_number_last4": "4129",
+    },
+    {
+        "bank_name": "Leumi Bank",
+        "account_holder_name": "Carmiel Supply Hub Ltd.",
+        "account_number_last4": "4130",
+    },
 ]
 
 BASE_URL = "http://localhost:8000"
@@ -888,10 +1318,16 @@ def create_user():
         "password": "password123",
         "display_name": "John Doe",
     })
+    if resp.status_code == 409:
+        print("User already exists, skipping.")
+        return None
     resp.raise_for_status()
     data = resp.json()
-    print(f"User created: {data['id']} ({data['email']})")
+    print(f"User created: {data['id']} ({data['contact_info']['primary_email']})")
     return data
+
+
+TOTAL_SUPPLIERS = len(contact_infos)
 
 
 def create_supplier(index: int):
@@ -902,9 +1338,12 @@ def create_supplier(index: int):
         "business_info": business_infos[index],
         "banking_info": banking_infos[index],
     })
+    if resp.status_code == 409:
+        print(f"Supplier [{index + 1}/{TOTAL_SUPPLIERS}] already exists, skipping.")
+        return None
     resp.raise_for_status()
     data = resp.json()
-    print(f"Supplier [{index + 1}/20] created: {data['id']} ({data['legal_name']})")
+    print(f"Supplier [{index + 1}/{TOTAL_SUPPLIERS}] created: {data['id']} ({data['company_info']['legal_name']})")
     return data
 
 
@@ -912,7 +1351,9 @@ if __name__ == "__main__":
     user = create_user()
 
     suppliers = []
-    for i in range(20):
-        suppliers.append(create_supplier(i))
+    for i in range(TOTAL_SUPPLIERS):
+        result = create_supplier(i)
+        if result:
+            suppliers.append(result)
 
-    print(f"\nDone. 1 user + {len(suppliers)} suppliers created.")
+    print(f"\nDone. {len(suppliers)} new suppliers created.")

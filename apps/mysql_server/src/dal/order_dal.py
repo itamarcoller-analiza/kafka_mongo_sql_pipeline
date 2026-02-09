@@ -106,16 +106,16 @@ class OrderDAL:
         finally:
             conn.close()
 
-    def cancel_order(self, order_number, reason, event_id, event_timestamp):
+    def cancel_order(self, order_number, event_id, event_timestamp):
         conn = get_database().get_connection()
         try:
             cursor = conn.cursor()
             cursor.execute("""
                 UPDATE orders
-                SET status = 'cancelled', cancelled_reason = %s,
+                SET status = 'cancelled',
                     event_id = %s, event_timestamp = %s
                 WHERE order_number = %s
-            """, (reason, event_id, event_timestamp, order_number))
+            """, (event_id, event_timestamp, order_number))
             cursor.close()
         finally:
             conn.close()

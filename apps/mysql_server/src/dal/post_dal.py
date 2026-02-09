@@ -18,6 +18,7 @@ class PostDAL:
                     link_image, link_site_name,
                     view_count, like_count, comment_count,
                     share_count, save_count, engagement_rate,
+                    last_comment_at,
                     deleted_at, published_at, created_at, updated_at,
                     event_id, event_timestamp):
         conn = get_database().get_connection()
@@ -33,11 +34,12 @@ class PostDAL:
                      link_image, link_site_name,
                      view_count, like_count, comment_count,
                      share_count, save_count, engagement_rate,
+                     last_comment_at,
                      deleted_at, published_at, created_at, updated_at,
                      event_id, event_timestamp)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s)
+                        %s, %s, %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
                     post_type=VALUES(post_type),
                     author_display_name=VALUES(author_display_name),
@@ -54,6 +56,7 @@ class PostDAL:
                     share_count=VALUES(share_count),
                     save_count=VALUES(save_count),
                     engagement_rate=VALUES(engagement_rate),
+                    last_comment_at=VALUES(last_comment_at),
                     deleted_at=VALUES(deleted_at),
                     published_at=VALUES(published_at),
                     updated_at=VALUES(updated_at),
@@ -67,6 +70,7 @@ class PostDAL:
                   link_image, link_site_name,
                   view_count, like_count, comment_count,
                   share_count, save_count, engagement_rate,
+                  last_comment_at,
                   deleted_at, published_at, created_at, updated_at,
                   event_id, event_timestamp))
             cursor.close()

@@ -72,8 +72,7 @@ class KafkaProducer:
 
     def emit(
         self,
-        topic: str,
-        action: str,
+        event_type: str,
         entity_id: str,
         data: dict[str, Any],
     ) -> None:
@@ -81,13 +80,13 @@ class KafkaProducer:
         Emit a domain event to Kafka.
 
         Args:
-            topic: Target topic (e.g., Topic.USER)
-            action: Event action (e.g., "registered", "login")
+            event_type: Event type constant (e.g., EventType.USER_CREATED)
             entity_id: Primary entity ID (used as partition key)
             data: Event payload data
         """
+        topic = event_type.split(".")[0]
         event = {
-            "event_type": f"{topic}.{action}",
+            "event_type": event_type,
             "event_id": str(uuid.uuid4()),
             "timestamp": utc_now().isoformat(),
             "entity_id": entity_id,

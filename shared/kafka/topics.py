@@ -26,16 +26,22 @@ class EventType:
 
     # User
     USER_CREATED = "user.created"
+    USER_UPDATED = "user.updated"
     USER_DELETED = "user.deleted"
 
     # Supplier
     SUPPLIER_CREATED = "supplier.created"
+    SUPPLIER_UPDATED = "supplier.updated"
     SUPPLIER_DELETED = "supplier.deleted"
 
     # Product
     PRODUCT_CREATED = "product.created"
-    PRODUCT_DELETED = "product.deleted"
+    PRODUCT_UPDATED = "product.updated"
     PRODUCT_PUBLISHED = "product.published"
+    PRODUCT_DISCONTINUED = "product.discontinued"
+    PRODUCT_OUT_OF_STOCK = "product.out_of_stock"
+    PRODUCT_RESTORED = "product.restored"
+    PRODUCT_DELETED = "product.deleted"
 
     # Order
     ORDER_CREATED = "order.created"
@@ -43,5 +49,6 @@ class EventType:
 
     # Post
     POST_CREATED = "post.created"
-    POST_DELETED = "post.deleted"
+    POST_UPDATED = "post.updated"
     POST_PUBLISHED = "post.published"
+    POST_DELETED = "post.deleted"

@@ -21,7 +21,7 @@ class PostConsumer:
         return datetime.fromisoformat(ts.replace("Z", "+00:00"))
 
     def _handle_post_upsert(self, event: dict):
-        """Shared handler for created and published (both send full model)."""
+        """Shared handler for all events that send full post model."""
         data = event.get("data", {})
         author = data.get("author", {})
         stats = data.get("stats", {})
@@ -48,6 +48,7 @@ class PostConsumer:
             share_count=stats.get("share_count", 0),
             save_count=stats.get("save_count", 0),
             engagement_rate=stats.get("engagement_rate", 0.0),
+            last_comment_at=self._parse_ts(stats.get("last_comment_at")),
             deleted_at=self._parse_ts(data.get("deleted_at")),
             published_at=self._parse_ts(data.get("published_at")),
             created_at=self._parse_ts(data.get("created_at")),
@@ -59,6 +60,10 @@ class PostConsumer:
     def handle_post_created(self, event: dict):
         self._handle_post_upsert(event)
         logger.info(f"[POST_CREATED] {event['entity_id']}")
+
+    def handle_post_updated(self, event: dict):
+        self._handle_post_upsert(event)
+        logger.info(f"[POST_UPDATED] {event['entity_id']}")
 
     def handle_post_published(self, event: dict):
         self._handle_post_upsert(event)
@@ -76,6 +81,7 @@ class PostConsumer:
     def get_handlers(self) -> dict:
         return {
             EventType.POST_CREATED: self.handle_post_created,
-            EventType.POST_DELETED: self.handle_post_deleted,
+            EventType.POST_UPDATED: self.handle_post_updated,
             EventType.POST_PUBLISHED: self.handle_post_published,
+            EventType.POST_DELETED: self.handle_post_deleted,
         }

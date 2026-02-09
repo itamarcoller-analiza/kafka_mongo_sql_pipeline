@@ -171,7 +171,8 @@ class Order(Document):
 
         indexes = [
             # Unique order number
-           
+            [("order_number", 1)],
+
             # Customer's orders
             [("customer.user_id", 1), ("created_at", -1)],
 

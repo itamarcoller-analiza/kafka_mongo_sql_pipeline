@@ -81,7 +81,6 @@ class OrderConsumer:
         data = event.get("data", {})
         self._dal.cancel_order(
             order_number=data.get("order_number"),
-            reason=data.get("reason"),
             event_id=event.get("event_id"),
             event_timestamp=self._parse_ts(event.get("timestamp")),
         )
