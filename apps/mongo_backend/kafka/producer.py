@@ -86,7 +86,7 @@ class KafkaProducer:
         """
         topic = event_type.split(".")[0]
         event = {
-            "x": event_type,
+            "event_type": event_type,
             "event_id": str(uuid.uuid4()),
             "timestamp": utc_now().isoformat(),
             "entity_id": entity_id,
