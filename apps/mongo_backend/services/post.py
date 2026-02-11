@@ -26,20 +26,32 @@ class PostService:
 
     @staticmethod
     def _build_media(media_list) -> list[MediaAttachment]:
-        # TODO: Implement _build_media
-        # Convert a list of request objects into MediaAttachment embedded documents
-        # Return empty list if media_list is falsy
-        # Each item has: media_type, media_url, thumbnail_url, width, height,
-        #   duration_seconds, size_bytes
-        pass
+        if not media_list:
+            return []
+        return [
+            MediaAttachment(
+                media_type=m.media_type,
+                media_url=m.media_url,
+                thumbnail_url=m.thumbnail_url,
+                width=m.width,
+                height=m.height,
+                duration_seconds=m.duration_seconds,
+                size_bytes=m.size_bytes,
+            )
+            for m in media_list
+        ]
 
     @staticmethod
     def _build_link_preview(lp) -> Optional[LinkPreview]:
-        # TODO: Implement _build_link_preview
-        # Convert a request object into a LinkPreview embedded document
-        # Return None if lp is falsy
-        # Fields: url, title, description, image, site_name
-        pass
+        if not lp:
+            return None
+        return LinkPreview(
+            url=lp.url,
+            title=lp.title,
+            description=lp.description,
+            image=lp.image,
+            site_name=lp.site_name,
+        )
 
     # ----------------------------------------------------------------
     # CRUD
@@ -47,24 +59,33 @@ class PostService:
 
     async def create_post(self, user_id: str, body) -> Post:
         """Create a new post. `body` is a CreateCommunityPostRequest."""
-        # TODO: Implement create_post
-        # 1. Build post author using build_post_author(user_id)
-        # 2. Create Post document with:
-        #    - post_type (PostType enum), author, text_content
-        #    - media (use _build_media helper), link_preview (use _build_link_preview helper)
-        #    - published_at: None if is_draft, else current UTC time
-        # 3. Insert into MongoDB
-        # 4. Emit POST_CREATED Kafka event
-        # 5. Return the created post
-        pass
+        author = await build_post_author(user_id)
+
+        post = Post(
+            post_type=PostType(body.post_type),
+            author=author,
+            text_content=body.text_content,
+            media=self._build_media(body.media),
+            link_preview=self._build_link_preview(body.link_preview),
+            published_at=None if body.is_draft else utc_now(),
+        )
+        await post.insert()
+
+        self._kafka.emit(
+            event_type=EventType.POST_CREATED,
+            entity_id=oid_to_str(post.id),
+            data=post.model_dump(mode="json"),
+        )
+        return post
 
     async def get_post(self, post_id: str) -> Post:
-        # TODO: Implement get_post
-        # 1. Fetch post by ID using Post.get()
-        # 2. Handle invalid ObjectId (raise NotFoundError)
-        # 3. Check post exists and is not soft-deleted
-        # 4. Return the post
-        pass
+        try:
+            post = await Post.get(PydanticObjectId(post_id))
+        except Exception:
+            raise NotFoundError("Post not found")
+        if not post or post.deleted_at:
+            raise NotFoundError("Post not found")
+        return post
 
     async def list_posts(
         self,
@@ -72,38 +93,60 @@ class PostService:
         limit: int = 20,
         author_id: Optional[str] = None,
     ) -> list[Post]:
-        # TODO: Implement list_posts
-        # 1. Build query: deleted_at is None AND published_at is not None
-        # 2. If author_id provided, filter by author.user_id
-        # 3. Sort by -published_at, apply skip/limit (cap at 100)
-        # 4. Return the list
-        pass
+        query: dict = {"deleted_at": None, "published_at": {"$ne": None}}
+        if author_id:
+            query["author.user_id"] = author_id
+
+        return (
+            await Post.find(query)
+            .sort("-published_at")
+            .skip(skip)
+            .limit(min(limit, 100))
+            .to_list()
+        )
 
     async def update_post(self, post_id: str, body) -> Post:
         """Partial update. `body` is an UpdatePostRequest."""
-        # TODO: Implement update_post
-        # 1. Fetch the post using get_post
-        # 2. Update only the provided fields:
-        #    text_content, media (use helper), link_preview (use helper)
-        # 3. Save the updated document
-        # 4. Emit POST_UPDATED Kafka event
-        # 5. Return the updated post
-        pass
+        post = await self.get_post(post_id)
+
+        if body.text_content is not None:
+            post.text_content = body.text_content
+        if body.media is not None:
+            post.media = self._build_media(body.media)
+        if body.link_preview is not None:
+            post.link_preview = self._build_link_preview(body.link_preview)
+
+        await post.save()
+
+        self._kafka.emit(
+            event_type=EventType.POST_UPDATED,
+            entity_id=oid_to_str(post.id),
+            data=post.model_dump(mode="json"),
+        )
+        return post
 
     async def delete_post(self, post_id: str) -> None:
-        # TODO: Implement delete_post (soft delete)
-        # 1. Fetch the post using get_post
-        # 2. Set deleted_at to current UTC time
-        # 3. Save the document
-        # 4. Emit POST_DELETED Kafka event
-        pass
+        post = await self.get_post(post_id)
+        post.deleted_at = utc_now()
+        await post.save()
+
+        self._kafka.emit(
+            event_type=EventType.POST_DELETED,
+            entity_id=oid_to_str(post.id),
+            data={"post_id": oid_to_str(post.id)},
+        )
 
     async def publish_post(self, post_id: str) -> Post:
-        # TODO: Implement publish_post
-        # 1. Fetch the post using get_post
-        # 2. Validate post is not already published (raise ValidationError)
-        # 3. Set published_at to current UTC time
-        # 4. Save the document
-        # 5. Emit POST_PUBLISHED Kafka event
-        # 6. Return the updated post
-        pass
+        post = await self.get_post(post_id)
+        if post.published_at is not None:
+            raise ValidationError("Post is already published")
+
+        post.published_at = utc_now()
+        await post.save()
+
+        self._kafka.emit(
+            event_type=EventType.POST_PUBLISHED,
+            entity_id=oid_to_str(post.id),
+            data=post.model_dump(mode="json"),
+        )
+        return post

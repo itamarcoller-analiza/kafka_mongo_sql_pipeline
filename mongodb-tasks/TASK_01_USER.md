@@ -245,59 +245,6 @@ Operation 2: INSERT   → Persist the new User document
 
 <!-- TODO: Implement create_user -->
 
-#### Verify Exercise 5.1
-
-```bash
-curl -X POST http://localhost:8000/users \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "consumer@example.com",
-    "password": "MySecure1Pass",
-    "display_name": "Test Consumer"
-  }'
-```
-
-**Expected response (201 Created):**
-```json
-{
-  "id": "<some-object-id>",
-  "contact_info": {
-    "primary_email": "consumer@example.com",
-    "additional_emails": [],
-    "phone": null
-  },
-  "profile": {
-    "display_name": "Test Consumer",
-    "avatar": "https://cdn.example.com/avatars/default.jpg",
-    "bio": null,
-    "date_of_birth": null
-  },
-  "deleted_at": null,
-  "version": 1,
-  "created_at": "...",
-  "updated_at": "..."
-}
-```
-
-> Note: `password_hash` is stripped from the response by the `user_response()` utility in the route layer.
-
-**Test duplicate email (409 Conflict):**
-```bash
-curl -X POST http://localhost:8000/users \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "consumer@example.com",
-    "password": "MySecure1Pass",
-    "display_name": "Duplicate User"
-  }'
-```
-
-**Verify in MongoDB shell:**
-```javascript
-db.users.findOne({"contact_info.primary_email": "consumer@example.com"})
-```
-You should see the full document with all default fields populated.
-
 ---
 
 ### Exercise 5.2: Get By ID - The Primary Key Lookup
@@ -331,28 +278,6 @@ User.get(PydanticObjectId("507f..."))           ← _id lookup (uses primary key
 
 <!-- TODO: Implement get_user -->
 
-#### Verify Exercise 5.2
-
-Use the `id` from the user you created in Exercise 5.1:
-```bash
-curl http://localhost:8000/users/<user-id>
-```
-
-**Expected (200 OK):**
-```json
-{
-  "id": "<user-id>",
-  "contact_info": { ... },
-  "profile": { ... },
-  ...
-}
-```
-
-**Non-existent user (404):**
-```bash
-curl http://localhost:8000/users/000000000000000000000000
-```
-
 ---
 
 ### Exercise 5.3: List Users - Filtering and Pagination
@@ -375,14 +300,6 @@ FIND where deleted_at == null, SKIP n, LIMIT m → list of User documents
 ```
 
 <!-- TODO: Implement list_users -->
-
-#### Verify Exercise 5.3
-
-```bash
-curl "http://localhost:8000/users?limit=10&skip=0"
-```
-
-**Expected (200 OK):** Array of user objects.
 
 ---
 
@@ -415,26 +332,6 @@ Operation 2: SAVE → replaces the document with updated fields
 
 <!-- TODO: Implement update_user -->
 
-#### Verify Exercise 5.4
-
-```bash
-curl -X PATCH http://localhost:8000/users/<user-id> \
-  -H "Content-Type: application/json" \
-  -d '{
-    "display_name": "Updated Name",
-    "bio": "Hello, I am a test user!"
-  }'
-```
-
-**Expected (200 OK):** User object with updated `display_name` and `bio`, but unchanged `phone` and `avatar`.
-
-**Verify in MongoDB shell:**
-```javascript
-db.users.findOne({"_id": ObjectId("<user-id>")}, {"profile": 1, "updated_at": 1})
-// profile.display_name should be "Updated Name"
-// updated_at should be recent
-```
-
 ---
 
 ### Exercise 5.5: Soft Delete - The Deletion Pattern
@@ -465,59 +362,6 @@ Operation 2: SAVE → sets deleted_at timestamp
 > - Support "undo" functionality
 
 <!-- TODO: Implement delete_user -->
-
-#### Verify Exercise 5.5
-
-```bash
-# Delete the user
-curl -X DELETE http://localhost:8000/users/<user-id>
-# Expected: 204 No Content
-
-# Try to get the deleted user
-curl http://localhost:8000/users/<user-id>
-# Expected: 404 Not Found (because get_user checks deleted_at)
-
-# List users - deleted user should not appear
-curl http://localhost:8000/users
-# Expected: Array without the deleted user
-```
-
-**Verify in MongoDB shell:**
-```javascript
-db.users.findOne({"_id": ObjectId("<user-id>")})
-// Document still exists but deleted_at is set to a timestamp
-```
-
----
-
-## 6. VERIFICATION CHECKLIST
-
-Before moving to TASK_02, verify that ALL of the following pass:
-
-### Functional Checks
-- [ ] **Create user** - creates document with correct defaults (`deleted_at=null`, `version=1`, timestamps set)
-- [ ] **Duplicate email rejected** - second registration with same email fails with 409
-- [ ] **Get user** - returns user data by ID
-- [ ] **Get non-existent user** - returns 404
-- [ ] **List users** - returns array, respects skip/limit
-- [ ] **List users excludes deleted** - soft-deleted users don't appear in list
-- [ ] **Update user** - updates only provided fields, leaves others unchanged
-- [ ] **Delete user** - sets `deleted_at`, user no longer accessible via get/list
-
-### Database Checks (MongoDB shell)
-- [ ] `db.users.countDocuments()` - shows correct number of users created
-- [ ] `db.users.getIndexes()` - shows only the default `_id` index
-- [ ] Document has correct embedded structure: `contact_info` with `primary_email`, `additional_emails`, `phone`
-- [ ] Document has `profile` with `display_name`, `avatar`, `bio`, `date_of_birth`
-- [ ] After update: `updated_at` is refreshed
-- [ ] After delete: `deleted_at` is set, document still exists
-
-### Code Quality Checks
-- [ ] `DuplicateError` used for email conflicts (not generic Exception)
-- [ ] `NotFoundError` used for missing users
-- [ ] Email normalized (lowercase, stripped) before uniqueness query
-- [ ] Kafka events emitted for: USER_CREATED, USER_UPDATED, USER_DELETED
-- [ ] All operations use Beanie ODM (no raw PyMongo queries)
 
 ---
 

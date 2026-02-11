@@ -373,41 +373,6 @@ self._kafka.emit(
 
 <!-- TODO: Implement create_order -->
 
-#### Verify
-
-```bash
-# First, get a valid user ID and an ACTIVE product ID from your database
-
-# Create an order
-curl -s -X POST http://localhost:8000/orders \
-  -H "Content-Type: application/json" \
-  -H "X-User-ID: <user_id>" \
-  -d '{
-    "items": [
-      {
-        "product_id": "<product_id>",
-        "variant_name": "Default",
-        "quantity": 2
-      }
-    ],
-    "shipping_address": {
-      "recipient_name": "John Doe",
-      "phone": "+1234567890",
-      "street_address_1": "123 Main St",
-      "city": "New York",
-      "state": "NY",
-      "zip_code": "10001",
-      "country": "US"
-    },
-    "payment_info": {
-      "payment_method": "credit_card",
-      "payment_provider": "stripe"
-    }
-  }' | python3 -m json.tool
-```
-
-**Expected**: Status 201, order with `status: "pending"`, `order_number` like `"ORD-XXXXXXXX-XXXX"`, items with `ProductSnapshot` data frozen from the product.
-
 ---
 
 ### Exercise 5.3: Get Order - Simple ID Lookup
@@ -436,15 +401,6 @@ async def get_order(self, order_id: str) -> Order:
 > **Hint Level 2**: Use `PydanticObjectId(order_id)` to convert the string, catch any exception, raise `NotFoundError("Order not found")`.
 
 <!-- TODO: Implement get_order -->
-
-#### Verify
-
-```bash
-# Use the order ID from Exercise 5.2
-curl -s http://localhost:8000/orders/<order_id> | python3 -m json.tool
-```
-
-**Expected**: Full order with customer snapshot, items with product snapshots, shipping address.
 
 ---
 
@@ -510,24 +466,6 @@ return (
 
 <!-- TODO: Implement list_orders -->
 
-#### Verify
-
-```bash
-# List all orders for a user
-curl -s "http://localhost:8000/orders?skip=0&limit=10" \
-  -H "X-User-ID: <user_id>" | python3 -m json.tool
-
-# Filter by status
-curl -s "http://localhost:8000/orders?status=pending" \
-  -H "X-User-ID: <user_id>" | python3 -m json.tool
-
-# Multiple statuses
-curl -s "http://localhost:8000/orders?status=pending,confirmed" \
-  -H "X-User-ID: <user_id>" | python3 -m json.tool
-```
-
-**Expected**: Array of orders sorted newest first, filtered by status if provided.
-
 ---
 
 ### Exercise 5.5: Cancel Order - Status Guard
@@ -581,51 +519,6 @@ self._kafka.emit(
 > **Hint Level 2**: Use `ValidationError` (not `ValueError`) from `shared.errors`. The `reason` parameter is received but not stored on the Order model in the current implementation - it's available for logging/event data if needed.
 
 <!-- TODO: Implement cancel_order -->
-
-#### Verify
-
-```bash
-# Cancel a pending order
-curl -s -X POST http://localhost:8000/orders/<order_id>/cancel \
-  -H "Content-Type: application/json" \
-  -H "X-User-ID: <user_id>" \
-  -d '{"order_id": "<order_id>", "reason": "Changed my mind about this purchase"}' \
-  | python3 -m json.tool
-```
-
-**Expected**: Order returned with `status: "cancelled"`.
-
-```bash
-# Try to cancel again (should fail)
-curl -s -X POST http://localhost:8000/orders/<order_id>/cancel \
-  -H "Content-Type: application/json" \
-  -H "X-User-ID: <user_id>" \
-  -d '{"order_id": "<order_id>", "reason": "Trying again"}' \
-  | python3 -m json.tool
-```
-
-**Expected**: 422 error - "Only pending or confirmed orders can be cancelled".
-
----
-
-## 6. VERIFICATION CHECKLIST
-
-| # | Test | What to Verify |
-|---|------|---------------|
-| 1 | Create an order with valid user and ACTIVE product | Order created with status `pending`, `OrderCustomer` has user data, `ProductSnapshot` has product data |
-| 2 | Create an order with invalid product ID | Returns `NotFoundError` |
-| 3 | Create an order with DRAFT/DISCONTINUED product | Returns `ValidationError` - product not available |
-| 4 | Create an order with deleted user | Returns `NotFoundError` from `build_order_customer` |
-| 5 | Get order by ID | Returns full order with all embedded data |
-| 6 | Get nonexistent order | Returns `NotFoundError` |
-| 7 | List user orders | Newest first, skip/limit works |
-| 8 | List user orders with status filter | Only matching statuses returned |
-| 9 | List with skip | Second page returns different orders |
-| 10 | Cancel a PENDING order | Status changes to `cancelled` |
-| 11 | Cancel a CANCELLED order | Returns `ValidationError` |
-| 12 | Cancel with reason | Service accepts reason parameter |
-| 13 | Order number format | Matches `ORD-YYYYMMDD-XXXX` pattern |
-| 14 | Product snapshot | Snapshot contains product_name, supplier_name, variant info frozen at order time |
 
 ---
 

@@ -424,56 +424,6 @@ self._kafka.emit(
 
 <!-- TODO: Implement create_product -->
 
-#### Verification
-
-```bash
-# Create a product (replace SUPPLIER_ID with an actual supplier ID):
-curl -s -X POST http://localhost:8000/products \
-  -H "Content-Type: application/json" \
-  -H "X-Supplier-ID: SUPPLIER_ID" \
-  -d '{
-    "name": "Wireless Headphones",
-    "short_description": "Premium noise-cancelling headphones",
-    "topic_descriptions": [
-      {"topic": "Features", "description": "Active noise cancellation with 30hr battery", "display_order": 1}
-    ],
-    "category": "electronics",
-    "unit_type": "piece",
-    "base_sku": "HDPH-001",
-    "brand": "AudioTech",
-    "base_price_cents": 9999,
-    "images": [{"url": "https://example.com/img.jpg", "alt_text": "Headphones", "order": 0, "is_primary": true}],
-    "shipping": {"free_shipping": true, "ships_from_country": "US"},
-    "variants": {
-      "Black": {
-        "variant_id": "v1",
-        "variant_name": "Black",
-        "attributes": [{"attribute_name": "Color", "attribute_value": "Black"}],
-        "sku": "HDPH-001-BLK",
-        "price_cents": 9999,
-        "quantity": 50,
-        "package_dimensions": {"width_cm": 20, "height_cm": 15, "depth_cm": 10, "weight_grams": 350}
-      }
-    },
-    "stock_locations": [
-      {"location_id": "wh-1", "location_name": "Main Warehouse", "city": "Austin", "zip_code": "73301", "country": "US", "quantity": 100}
-    ]
-  }' | python3 -m json.tool
-
-# Expected: Product document with status "draft", supplier_info.name filled in
-```
-
-```javascript
-// In MongoDB shell - verify the product was created:
-db.products.findOne({ name: "Wireless Headphones" })
-
-// Verify supplier's product_ids was updated:
-db.suppliers.findOne(
-  { _id: ObjectId("your_supplier_id") },
-  { product_ids: 1 }
-)
-```
-
 ---
 
 ### Exercise 5.3: Get Product
@@ -498,20 +448,6 @@ async def get_product(self, product_id: str) -> Product:
 > **Note**: Unlike the old pattern, there is NO supplier_id ownership check in `get_product`. The route is a public GET endpoint - anyone can view a product by ID. The `X-Supplier-ID` header is only required for write operations.
 
 <!-- TODO: Implement get_product -->
-
-#### Verification
-
-```bash
-# Get the product you just created (replace PRODUCT_ID):
-curl -s http://localhost:8000/products/PRODUCT_ID | python3 -m json.tool
-
-# Expected: Full product document as JSON
-
-# Try a non-existent ID:
-curl -s http://localhost:8000/products/000000000000000000000000
-
-# Expected: 404 error with "Product not found"
-```
 
 ---
 
@@ -578,25 +514,6 @@ return (
 ```
 
 <!-- TODO: Implement list_products -->
-
-#### Verification
-
-```bash
-# List all non-deleted products:
-curl -s "http://localhost:8000/products" | python3 -m json.tool
-
-# List only draft products:
-curl -s "http://localhost:8000/products?status=draft" | python3 -m json.tool
-
-# List by category:
-curl -s "http://localhost:8000/products?category=electronics" | python3 -m json.tool
-
-# List by supplier:
-curl -s "http://localhost:8000/products?supplier_id=SUPPLIER_ID" | python3 -m json.tool
-
-# Pagination:
-curl -s "http://localhost:8000/products?skip=0&limit=5" | python3 -m json.tool
-```
 
 ---
 
@@ -665,24 +582,6 @@ if body.variants is not None:
 
 <!-- TODO: Implement update_product -->
 
-#### Verification
-
-```bash
-# Update the product name:
-curl -s -X PATCH http://localhost:8000/products/PRODUCT_ID \
-  -H "Content-Type: application/json" \
-  -H "X-Supplier-ID: SUPPLIER_ID" \
-  -d '{"name": "Premium Wireless Headphones"}' | python3 -m json.tool
-
-# Expected: Product with updated name, updated_at changed
-
-# Update category:
-curl -s -X PATCH http://localhost:8000/products/PRODUCT_ID \
-  -H "Content-Type: application/json" \
-  -H "X-Supplier-ID: SUPPLIER_ID" \
-  -d '{"category": "fashion"}' | python3 -m json.tool
-```
-
 ---
 
 ### Exercise 5.6: Delete Product
@@ -713,30 +612,6 @@ async def delete_product(self, product_id: str) -> None:
 > **Back-reference cleanup**: When deleting, you remove the product ID from the supplier's `product_ids` array. This is the reverse of what `create_product` does. Wrap it in try/except so a failed cleanup doesn't prevent the delete.
 
 <!-- TODO: Implement delete_product -->
-
-#### Verification
-
-```bash
-# Delete a product:
-curl -s -X DELETE http://localhost:8000/products/PRODUCT_ID \
-  -H "X-Supplier-ID: SUPPLIER_ID" -w "\nHTTP Status: %{http_code}\n"
-
-# Expected: HTTP 204 No Content
-
-# Verify it's gone from GET:
-curl -s http://localhost:8000/products/PRODUCT_ID
-
-# Expected: 404 "Product not found"
-```
-
-```javascript
-// In MongoDB shell - the document still exists but has status "deleted":
-db.products.findOne({ _id: ObjectId("PRODUCT_ID") }, { status: 1 })
-// → { status: "deleted" }
-
-// Verify supplier's product_ids no longer contains this product:
-db.suppliers.findOne({ _id: ObjectId("SUPPLIER_ID") }, { product_ids: 1 })
-```
 
 ---
 
@@ -800,66 +675,6 @@ if product.status != ProductStatus.ACTIVE:
 > **Note**: This is the only lifecycle method that can "undo" a delete, since `get_product()` excludes DELETED products.
 
 <!-- TODO: Implement restore_product -->
-
-#### Lifecycle Verification
-
-```bash
-# First, create a fresh product for testing lifecycle:
-# (use the create curl from Exercise 5.2)
-
-# 1. Publish (DRAFT → ACTIVE):
-curl -s -X POST http://localhost:8000/products/PRODUCT_ID/publish \
-  -H "X-Supplier-ID: SUPPLIER_ID" | python3 -m json.tool
-# Expected: status "active", published_at set
-
-# 2. Mark out of stock (ACTIVE → OUT_OF_STOCK):
-curl -s -X POST http://localhost:8000/products/PRODUCT_ID/mark-out-of-stock \
-  -H "X-Supplier-ID: SUPPLIER_ID" | python3 -m json.tool
-# Expected: status "out_of_stock"
-
-# 3. Discontinue (OUT_OF_STOCK → DISCONTINUED):
-curl -s -X POST http://localhost:8000/products/PRODUCT_ID/discontinue \
-  -H "X-Supplier-ID: SUPPLIER_ID" | python3 -m json.tool
-# Expected: status "discontinued"
-
-# 4. Restore (DISCONTINUED → DRAFT):
-curl -s -X POST http://localhost:8000/products/PRODUCT_ID/restore \
-  -H "X-Supplier-ID: SUPPLIER_ID" | python3 -m json.tool
-# Expected: status "draft"
-
-# 5. Try invalid transition (DRAFT → DISCONTINUE should fail):
-curl -s -X POST http://localhost:8000/products/PRODUCT_ID/discontinue \
-  -H "X-Supplier-ID: SUPPLIER_ID" | python3 -m json.tool
-# Expected: 422 error "Only active or out-of-stock products can be discontinued"
-```
-
----
-
-## 6. VERIFICATION CHECKLIST
-
-After implementing all methods, verify each one works:
-
-| # | Method | Test |
-|---|--------|------|
-| 1 | `_build_topic_descriptions` | Used by create_product - verify topic_descriptions in response |
-| 2 | `_build_stock_locations` | Used by create_product - verify stock_locations in response |
-| 3 | `_build_variants` | Used by create_product - verify variants dict in response |
-| 4 | `create_product` | Create a product with variants, stock locations, topic descriptions |
-| 5 | `create_product` (bad supplier) | Should fail with NotFoundError |
-| 6 | `get_product` | Get by ID - returns full product |
-| 7 | `get_product` (non-existent) | Should fail with NotFoundError |
-| 8 | `list_products` | List all non-deleted products |
-| 9 | `list_products` with status filter | Filter by `?status=draft` |
-| 10 | `list_products` with category | Filter by `?category=electronics` |
-| 11 | `list_products` with supplier | Filter by `?supplier_id=...` |
-| 12 | `update_product` | Change name, verify updated_at changes |
-| 13 | `update_product` (nested) | Update variants, verify old variants replaced |
-| 14 | `delete_product` | Any → DELETED, supplier product_ids cleaned up |
-| 15 | `publish_product` | DRAFT → ACTIVE, published_at set |
-| 16 | `publish_product` (wrong status) | Non-DRAFT → ValidationError |
-| 17 | `discontinue_product` | ACTIVE/OUT_OF_STOCK → DISCONTINUED |
-| 18 | `mark_out_of_stock` | ACTIVE → OUT_OF_STOCK |
-| 19 | `restore_product` | Any → DRAFT (even DELETED) |
 
 ---
 

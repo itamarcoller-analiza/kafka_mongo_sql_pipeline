@@ -11,6 +11,9 @@ dist/
 build/
 *.egg
 
+*.claude
+.claude
+
 # Virtual environments
 venv/
 .venv/

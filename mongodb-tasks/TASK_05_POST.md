@@ -353,48 +353,6 @@ published_at = None if body.is_draft else utc_now()
 
 <!-- TODO: Implement create_post -->
 
-#### Verification
-
-```bash
-# Create a published post (replace USER_ID with an actual user ID):
-curl -s -X POST http://localhost:8000/posts \
-  -H "Content-Type: application/json" \
-  -H "X-User-ID: USER_ID" \
-  -d '{
-    "community_id": "test-community",
-    "post_type": "text",
-    "text_content": "Hello world! My first post on this platform.",
-    "is_draft": false
-  }' | python3 -m json.tool
-
-# Expected: Post with published_at set, author.display_name filled in
-
-# Create a draft post:
-curl -s -X POST http://localhost:8000/posts \
-  -H "Content-Type: application/json" \
-  -H "X-User-ID: USER_ID" \
-  -d '{
-    "community_id": "test-community",
-    "post_type": "image",
-    "text_content": "Check out this photo!",
-    "media": [{"media_type": "image", "media_url": "https://example.com/photo.jpg"}],
-    "is_draft": true
-  }' | python3 -m json.tool
-
-# Expected: Post with published_at = null (draft)
-```
-
-```javascript
-// In MongoDB shell - verify the post was created:
-db.posts.findOne({ text_content: "Hello world! My first post on this platform." })
-
-// Check the denormalized author data:
-db.posts.findOne(
-  { text_content: /Hello world/ },
-  { "author": 1, "published_at": 1, "post_type": 1 }
-)
-```
-
 ---
 
 ### Exercise 5.3: Get Post
@@ -419,18 +377,6 @@ async def get_post(self, post_id: str) -> Post:
 > **Anti-enumeration**: Whether the post doesn't exist or was soft-deleted, the same "Post not found" error is returned. An attacker can't distinguish between the two.
 
 <!-- TODO: Implement get_post -->
-
-#### Verification
-
-```bash
-# Get the post you created:
-curl -s http://localhost:8000/posts/POST_ID | python3 -m json.tool
-
-# Try a non-existent ID:
-curl -s http://localhost:8000/posts/000000000000000000000000
-
-# Expected: 404 "Post not found"
-```
 
 ---
 
@@ -479,36 +425,6 @@ return (
 
 <!-- TODO: Implement list_posts -->
 
-#### Verification
-
-```bash
-# List all published posts:
-curl -s "http://localhost:8000/posts" | python3 -m json.tool
-
-# List posts by a specific author:
-curl -s "http://localhost:8000/posts?author_id=USER_ID" | python3 -m json.tool
-
-# Pagination:
-curl -s "http://localhost:8000/posts?skip=0&limit=5" | python3 -m json.tool
-
-# Note: draft posts should NOT appear in this listing
-```
-
-```javascript
-// In MongoDB shell - verify the query:
-db.posts.find({
-    deleted_at: null,
-    published_at: { $ne: null }
-}).sort({ published_at: -1 }).limit(20)
-
-// With author filter:
-db.posts.find({
-    deleted_at: null,
-    published_at: { $ne: null },
-    "author.user_id": ObjectId("USER_ID")
-}).sort({ published_at: -1 })
-```
-
 ---
 
 ### Exercise 5.5: Update Post (Partial Update)
@@ -538,18 +454,6 @@ async def update_post(self, post_id: str, body) -> Post:
 > **Note**: Unlike the old design, there is NO ownership check in the service. The route layer extracts `X-User-ID` header but the service trusts the caller.
 
 <!-- TODO: Implement update_post -->
-
-#### Verification
-
-```bash
-# Update the post text:
-curl -s -X PATCH http://localhost:8000/posts/POST_ID \
-  -H "Content-Type: application/json" \
-  -H "X-User-ID: USER_ID" \
-  -d '{"post_id": "POST_ID", "version": 1, "text_content": "Updated content!"}' | python3 -m json.tool
-
-# Expected: Post with updated text_content, updated_at changed
-```
 
 ---
 
@@ -582,31 +486,6 @@ async def delete_post(self, post_id: str) -> None:
 
 <!-- TODO: Implement delete_post -->
 
-#### Verification
-
-```bash
-# Delete a post:
-curl -s -X DELETE http://localhost:8000/posts/POST_ID \
-  -H "X-User-ID: USER_ID" -w "\nHTTP Status: %{http_code}\n"
-
-# Expected: HTTP 204 No Content
-
-# Verify it's gone from GET:
-curl -s http://localhost:8000/posts/POST_ID
-
-# Expected: 404 "Post not found"
-
-# Verify it's gone from list:
-curl -s "http://localhost:8000/posts" | python3 -m json.tool
-# The deleted post should NOT appear
-```
-
-```javascript
-// In MongoDB shell - the document still exists but has deleted_at set:
-db.posts.findOne({ _id: ObjectId("POST_ID") }, { deleted_at: 1, text_content: 1 })
-// → { deleted_at: ISODate("2025-..."), text_content: "..." }
-```
-
 ---
 
 ### Exercise 5.7: Publish Post (Draft to Published)
@@ -633,66 +512,6 @@ async def publish_post(self, post_id: str) -> Post:
 > **Draft gate**: Only unpublished posts (where `published_at is None`) can be published. Trying to publish an already-published post is an error.
 
 <!-- TODO: Implement publish_post -->
-
-#### Verification
-
-```bash
-# First, create a draft post:
-curl -s -X POST http://localhost:8000/posts \
-  -H "Content-Type: application/json" \
-  -H "X-User-ID: USER_ID" \
-  -d '{
-    "community_id": "test-community",
-    "post_type": "text",
-    "text_content": "This is a draft that I will publish later.",
-    "is_draft": true
-  }' | python3 -m json.tool
-
-# Note the post ID and that published_at is null
-
-# Publish the draft:
-curl -s -X POST http://localhost:8000/posts/DRAFT_POST_ID/publish \
-  -H "X-User-ID: USER_ID" | python3 -m json.tool
-
-# Expected: Post with published_at now set
-
-# Try to publish again (should fail):
-curl -s -X POST http://localhost:8000/posts/DRAFT_POST_ID/publish \
-  -H "X-User-ID: USER_ID" | python3 -m json.tool
-
-# Expected: 422 error "Post is already published"
-
-# Now it should appear in the feed:
-curl -s "http://localhost:8000/posts" | python3 -m json.tool
-# The published post should now be in the list
-```
-
----
-
-## 6. VERIFICATION CHECKLIST
-
-After implementing all methods, verify each one works:
-
-| # | Test | What to Verify |
-|---|------|---------------|
-| 1 | `_build_media` | Used by create/update - verify media list in response |
-| 2 | `_build_link_preview` | Used by create/update - verify link_preview in response |
-| 3 | Create a post (published) | `published_at` is set, `PostAuthor` has correct user data |
-| 4 | Create a post (draft) | `published_at` is None |
-| 5 | Create with media | `media` array populated correctly |
-| 6 | Create with link preview | `link_preview` object populated |
-| 7 | Get a post by ID | Returns the post with all embedded data |
-| 8 | Get a deleted post | Returns "Post not found" |
-| 9 | List posts | Only published + non-deleted posts visible |
-| 10 | List posts with author_id | Only that author's published posts returned |
-| 11 | List posts pagination | skip/limit works correctly |
-| 12 | Draft post NOT in list | A draft post should not appear in `list_posts` |
-| 13 | Update a post | Text changes, `updated_at` changes |
-| 14 | Update media | Old media replaced with new list |
-| 15 | Delete a post | `deleted_at` is set, post no longer in feeds |
-| 16 | Delete a deleted post | Should fail with "Post not found" |
-| 17 | Publish a draft post | `published_at` set, now visible in feeds |
-| 18 | Publish an already-published post | Returns ValidationError |
 
 ---
 

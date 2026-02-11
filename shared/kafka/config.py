@@ -4,7 +4,8 @@ import os
 
 from pydantic import BaseModel, Field
 
-
+# this is the config file inside the shared/kafka/ directory, used by both producer and consumer to load config from environment variables and create config dicts for confluent_kafka Producer and Consumer.
+# It also defines the KafkaConfig class which is a Pydantic model for validating and loading
 class KafkaConfig(BaseModel):
     """Kafka configuration from environment variables."""
 
@@ -13,16 +14,23 @@ class KafkaConfig(BaseModel):
 
     @classmethod
     def from_env(cls, client_id: str = "service") -> "KafkaConfig":
-        """Create config from environment variables."""
-        # TODO: Read KAFKA_BOOTSTRAP_SERVERS and KAFKA_CLIENT_ID from environment
-        pass
+        return cls(
+            bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
+            client_id=os.getenv("KAFKA_CLIENT_ID", client_id),
+        )
 
     def to_producer_config(self) -> dict:
-        """Return config dict for confluent_kafka.Producer."""
-        # TODO: Return producer configuration dictionary
-        pass
+        return {
+            "bootstrap.servers": self.bootstrap_servers,
+            "client.id": self.client_id,
+        }
 
     def to_consumer_config(self, group_id: str) -> dict:
-        """Return config dict for confluent_kafka.Consumer."""
-        # TODO: Return consumer configuration dictionary
-        pass
+        return {
+            "bootstrap.servers": self.bootstrap_servers,
+            "group.id": group_id,
+            "client.id": self.client_id,
+            "auto.offset.reset": os.getenv("KAFKA_AUTO_OFFSET_RESET", "earliest"),
+            "enable.auto.commit": True,
+            "auto.commit.interval.ms": 5000,
+        }

@@ -259,69 +259,6 @@ Step G: Build Supplier from all of the above
 
 <!-- TODO: Implement create_supplier -->
 
-#### Verify Exercise 5.1
-
-```bash
-curl -X POST http://localhost:8000/suppliers \
-  -H "Content-Type: application/json" \
-  -d '{
-    "password": "SecurePass1!",
-    "contact_info": {
-      "primary_email": "sales@acme-electronics.com",
-      "primary_phone": "+1-555-0100",
-      "contact_person_name": "John Doe",
-      "contact_person_title": "Sales Director"
-    },
-    "company_info": {
-      "legal_name": "Acme Electronics Inc",
-      "business_address": {
-        "street_address_1": "100 Commerce Blvd",
-        "city": "New York",
-        "state": "NY",
-        "zip_code": "10001",
-        "country": "US"
-      }
-    }
-  }'
-```
-
-**Expected response (201 Created):**
-```json
-{
-  "id": "<object-id>",
-  "contact_info": {
-    "primary_email": "sales@acme-electronics.com",
-    "additional_emails": [],
-    "primary_phone": "+1-555-0100",
-    "contact_person_name": "John Doe",
-    "contact_person_title": "Sales Director",
-    ...
-  },
-  "company_info": {
-    "legal_name": "Acme Electronics Inc",
-    "business_address": {
-      "street_address_1": "100 Commerce Blvd",
-      "city": "New York",
-      "state": "NY",
-      ...
-    }
-  },
-  ...
-}
-```
-
-**Verify the nested structure in MongoDB shell:**
-```javascript
-db.suppliers.findOne(
-  {"contact_info.primary_email": "sales@acme-electronics.com"},
-  {
-    "company_info.legal_name": 1,
-    "company_info.business_address": 1,
-    "contact_info.contact_person_name": 1
-  }
-)
-```
-
 ---
 
 ### Exercise 5.2: Get Supplier - ID Lookup
@@ -343,12 +280,6 @@ db.suppliers.findOne(
 
 <!-- TODO: Implement get_supplier -->
 
-#### Verify Exercise 5.2
-
-```bash
-curl http://localhost:8000/suppliers/<supplier-id>
-```
-
 ---
 
 ### Exercise 5.3: List Suppliers - Pagination
@@ -365,12 +296,6 @@ curl http://localhost:8000/suppliers/<supplier-id>
 3. Return the list
 
 <!-- TODO: Implement list_suppliers -->
-
-#### Verify Exercise 5.3
-
-```bash
-curl "http://localhost:8000/suppliers?limit=10&skip=0"
-```
 
 ---
 
@@ -398,27 +323,6 @@ curl "http://localhost:8000/suppliers?limit=10&skip=0"
 
 <!-- TODO: Implement update_supplier -->
 
-#### Verify Exercise 5.4
-
-```bash
-curl -X PATCH http://localhost:8000/suppliers/<supplier-id> \
-  -H "Content-Type: application/json" \
-  -d '{
-    "legal_name": "Acme Electronics LLC",
-    "support_email": "help@acme-electronics.com"
-  }'
-```
-
-**Expected:** Supplier with updated `company_info.legal_name` and `business_info.support_email`, all other fields unchanged.
-
-**Verify in MongoDB shell:**
-```javascript
-db.suppliers.findOne(
-  {"_id": ObjectId("<supplier-id>")},
-  {"company_info.legal_name": 1, "business_info.support_email": 1, "updated_at": 1}
-)
-```
-
 ---
 
 ### Exercise 5.5: Delete Supplier - Hard Delete
@@ -440,52 +344,6 @@ db.suppliers.findOne(
 - Suppliers can also have products, but the system design chooses permanent removal. Products would become orphaned - this is a deliberate simplification.
 
 <!-- TODO: Implement delete_supplier -->
-
-#### Verify Exercise 5.5
-
-```bash
-# Delete the supplier
-curl -X DELETE http://localhost:8000/suppliers/<supplier-id>
-# Expected: 204 No Content
-
-# Try to get the deleted supplier
-curl http://localhost:8000/suppliers/<supplier-id>
-# Expected: 404 Not Found
-
-# Verify in MongoDB shell - document should be GONE
-db.suppliers.findOne({"_id": ObjectId("<supplier-id>")})
-# Returns null (document permanently removed)
-```
-
----
-
-## 6. VERIFICATION CHECKLIST
-
-Before moving to the next task, verify:
-
-### Functional Checks
-- [ ] **Create supplier** - creates document with all embedded objects correctly nested (contact_info, company_info, business_info)
-- [ ] **Duplicate email rejected** - same email for two suppliers fails with 409
-- [ ] **Optional fields** - `banking_info: null`, `shipping_address: null` when not provided
-- [ ] **Get supplier** - returns full supplier document by ID
-- [ ] **Get non-existent supplier** - returns 404
-- [ ] **List suppliers** - returns array, respects skip/limit
-- [ ] **Update supplier** - updates fields across `contact_info`, `company_info`, and `business_info`
-- [ ] **Delete supplier** - permanently removes document from collection
-
-### Database Checks
-- [ ] `db.suppliers.countDocuments()` - correct count
-- [ ] `db.suppliers.getIndexes()` - shows the location compound index
-- [ ] Supplier document has complete `company_info.business_address` nesting (3 levels deep)
-- [ ] Supplier document has `contact_info.contact_person_name` populated
-- [ ] After update: `updated_at` is refreshed
-- [ ] After delete: document is completely gone (not soft-deleted)
-
-### Code Quality Checks
-- [ ] `DuplicateError` used for email conflicts
-- [ ] `NotFoundError` used for missing suppliers
-- [ ] Kafka events emitted: `SUPPLIER_CREATED`, `SUPPLIER_UPDATED`, `SUPPLIER_DELETED`
-- [ ] All operations use Beanie ODM
 
 ---
 
